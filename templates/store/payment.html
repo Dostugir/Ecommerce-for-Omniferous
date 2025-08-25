@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payment - Order #{{ order.order_number }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .payment-form {
+        max-width: 500px;
+        margin: 0 auto;
+    }
+    .order-summary {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h2 class="mb-4">Payment</h2>
+            
+            <!-- Order Summary -->
+            <div class="order-summary">
+                <h4>Order Summary</h4>
+                <p><strong>Order Number:</strong> {{ order.order_number }}</p>
+                <p><strong>Total Amount:</strong> ${{ order.total_amount }}</p>
+                <p><strong>Shipping to:</strong> {{ order.first_name }} {{ order.last_name }}</p>
+                <p><strong>Address:</strong> {{ order.address }}, {{ order.city }}, {{ order.state }} {{ order.postal_code }}</p>
+            </div>
+            
+            <!-- Payment Form -->
+            <div class="payment-form">
+                <form id="payment-form">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="card-element" class="form-label">Credit or debit card</label>
+                        <div id="card-element" class="form-control">
+                            <!-- Stripe Elements will create input elements here -->
+                        </div>
+                        <div id="card-errors" class="text-danger mt-2" role="alert"></div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-lg w-100" id="submit-button">
+                        <span id="button-text">Pay ${{ order.total_amount }}</span>
+                        <div class="spinner-border spinner-border-sm d-none" id="spinner" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+    // Initialize Stripe
+    const stripe = Stripe('{{ stripe_public_key }}');
+    const elements = stripe.elements();
+    
+    // Create card element
+    const card = elements.create('card', {
+        style: {
+            base: {
+                fontSize: '16px',
+                color: '#424770',
+                '::placeholder': {
+                    color: '#aab7c4',
+                },
+            },
+            invalid: {
+                color: '#9e2146',
+            },
+        },
+    });
+    
+    card.mount('#card-element');
+    
+    // Handle form submission
+    const form = document.getElementById('payment-form');
+    const submitButton = document.getElementById('submit-button');
+    const buttonText = document.getElementById('button-text');
+    const spinner = document.getElementById('spinner');
+    
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        
+        // Disable submit button
+        submitButton.disabled = true;
+        buttonText.classList.add('d-none');
+        spinner.classList.remove('d-none');
+        
+        try {
+            // Create payment intent
+            const response = await fetch('{% url "store:payment" order.id %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+            });
+            
+            const data = await response.json();
+            
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            // Confirm payment
+            const { error, paymentIntent } = await stripe.confirmCardPayment(data.client_secret, {
+                payment_method: {
+                    card: card,
+                    billing_details: {
+                        name: '{{ order.first_name }} {{ order.last_name }}',
+                        email: '{{ order.email }}',
+                    },
+                },
+            });
+            
+            if (error) {
+                throw new Error(error.message);
+            }
+            
+            // Payment successful
+            window.location.href = '{% url "store:payment_success" order.id %}';
+            
+        } catch (error) {
+            // Show error
+            const errorElement = document.getElementById('card-errors');
+            errorElement.textContent = error.message;
+            
+            // Re-enable submit button
+            submitButton.disabled = false;
+            buttonText.classList.remove('d-none');
+            spinner.classList.add('d-none');
+        }
+    });
+    
+    // Handle card errors
+    card.addEventListener('change', ({error}) => {
+        const displayError = document.getElementById('card-errors');
+        if (error) {
+            displayError.textContent = error.message;
+        } else {
+            displayError.textContent = '';
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Checkout - Omniferous{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Checkout</h1>
+
+    <div class="row">
+        <!-- Checkout Form -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Shipping Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.first_name|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.last_name|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.email|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.phone|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        {{ form.address|as_crispy_field }}
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                {{ form.city|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.state|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.postal_code|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        {{ form.country|as_crispy_field }}
+                        
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-credit-card me-2"></i>Proceed to Payment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    {% for item in cart_items %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <h6 class="mb-0">{{ item.product.name }}</h6>
+                            <small class="text-muted">Qty: {{ item.quantity }}</small>
+                        </div>
+                        <span>${{ item.get_total_price }}</span>
+                    </div>
+                    {% endfor %}
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal:</span>
+                        <span>${{ cart.get_total_price }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Shipping:</span>
+                        <span class="text-success">Free</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Tax:</span>
+                        <span>$0.00</span>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between">
+                        <strong>Total:</strong>
+                        <strong class="fs-5">${{ cart.get_total_price }}</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Methods -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Payment Methods</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fab fa-cc-stripe fa-2x text-primary me-3"></i>
+                        <div>
+                            <strong>Credit/Debit Card</strong>
+                            <br>
+                            <small class="text-muted">Visa, Mastercard, American Express</small>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-shield-alt fa-2x text-success me-3"></i>
+                        <div>
+                            <strong>Secure Payment</strong>
+                            <br>
+                            <small class="text-muted">256-bit SSL encryption</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Return Policy -->
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h6>Return Policy</h6>
+                    <p class="small text-muted mb-0">
+                        We offer a 30-day return policy for all unused items in their original packaging.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

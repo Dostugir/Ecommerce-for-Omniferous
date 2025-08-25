@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Omniferous - Home{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section bg-primary text-white py-5 mb-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1 class="display-4 fw-bold">Welcome to Omniferous</h1>
+                <p class="lead">Discover amazing products at great prices. Shop with confidence!</p>
+                <a href="{% url 'store:product_list' %}" class="btn btn-light btn-lg">Shop Now</a>
+            </div>
+            <div class="col-md-6">
+                <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 300px;">
+                    <i class="fas fa-shopping-cart fa-5x text-muted"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Featured Categories -->
+<section class="mb-5">
+    <div class="container">
+        <h2 class="text-center mb-4">Shop by Category</h2>
+        <div class="row">
+            {% for category in categories %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm">
+                    {% if category.image %}
+                    <img src="{{ category.image.url }}" class="card-img-top" alt="{{ category.name }}">
+                    {% else %}
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                        <i class="fas fa-box fa-3x text-muted"></i>
+                    </div>
+                    {% endif %}
+                    <div class="card-body text-center">
+                        <h5 class="card-title">{{ category.name }}</h5>
+                        <p class="card-text">{{ category.description|truncatewords:10 }}</p>
+                        <a href="{% url 'store:category_detail' category.slug %}" class="btn btn-outline-primary">Browse Products</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Featured Products -->
+<section class="mb-5">
+    <div class="container">
+        <h2 class="text-center mb-4">Featured Products</h2>
+        <div class="row">
+            {% for product in featured_products %}
+            <div class="col-md-3 mb-4">
+                <div class="card h-100 shadow-sm">
+                    {% if product.image %}
+                        <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
+                    {% else %}
+                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                            <i class="fas fa-image fa-3x text-muted"></i>
+                        </div>
+                    {% endif %}
+                    <div class="card-body d-flex flex-column">
+                        <h6 class="card-title">{{ product.name|truncatewords:5 }}</h6>
+                        <p class="card-text text-muted">{{ product.description|truncatewords:8 }}</p>
+                        <div class="mt-auto">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                {% if product.is_on_sale %}
+                                <span class="text-decoration-line-through text-muted">${{ product.price }}</span>
+                                <span class="text-danger fw-bold">${{ product.sale_price }}</span>
+                                {% else %}
+                                <span class="fw-bold">${{ product.price }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="d-grid">
+                                <a href="{% url 'store:product_detail' product.slug %}" class="btn btn-primary btn-sm">View Details</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Latest Products -->
+<section class="mb-5">
+    <div class="container">
+        <h2 class="text-center mb-4">Latest Arrivals</h2>
+        <div class="row">
+            {% for product in latest_products %}
+            <div class="col-md-3 mb-4">
+                <div class="card h-100 shadow-sm">
+                    {% if product.image %}
+                        <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
+                    {% else %}
+                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                            <i class="fas fa-image fa-3x text-muted"></i>
+                        </div>
+                    {% endif %}
+                    <div class="card-body d-flex flex-column">
+                        <h6 class="card-title">{{ product.name|truncatewords:5 }}</h6>
+                        <p class="card-text text-muted">{{ product.description|truncatewords:8 }}</p>
+                        <div class="mt-auto">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                {% if product.is_on_sale %}
+                                <span class="text-decoration-line-through text-muted">${{ product.price }}</span>
+                                <span class="text-danger fw-bold">${{ product.sale_price }}</span>
+                                {% else %}
+<span class="fw-bold">${{ product.price }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="d-grid">
+                                <a href="{% url 'store:product_detail' product.slug %}" class="btn btn-outline-primary btn-sm">View Details</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="bg-light py-5">
+    <div class="container text-center">
+        <h3>Ready to Start Shopping?</h3>
+        <p class="lead">Join thousands of satisfied customers who trust Omniferous for their online shopping needs.</p>
+        <a href="{% url 'store:product_list' %}" class="btn btn-primary btn-lg">Browse All Products</a>
+    </div>
+</section>
+{% endblock %}

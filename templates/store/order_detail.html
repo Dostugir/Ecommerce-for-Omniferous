@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Order #{{ order.order_number }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            <h2 class="mb-4">Order #{{ order.order_number }}</h2>
+            
+            <!-- Order Status -->
+            <div class="alert alert-{% if order.status == 'delivered' %}success{% elif order.status == 'shipped' %}info{% elif order.status == 'processing' %}warning{% else %}secondary{% endif %}">
+                <strong>Status:</strong> {{ order.get_status_display }}
+                <span class="badge bg-{% if order.payment_status == 'paid' %}success{% else %}warning{% endif %} ms-2">
+                    Payment: {{ order.payment_status|title }}
+                </span>
+            </div>
+            
+            <!-- Order Items -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Order Items</h5>
+                </div>
+                <div class="card-body">
+                    {% for item in order.items.all %}
+                    <div class="row mb-3">
+                        <div class="col-md-2">
+                            {% if item.product.image %}
+                                <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="img-fluid rounded">
+                            {% else %}
+                                <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                    <i class="fas fa-image text-muted"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <h6>{{ item.product.name }}</h6>
+                            <p class="text-muted mb-0">{{ item.product.description|truncatewords:10 }}</p>
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <span class="badge bg-secondary">{{ item.quantity }}</span>
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <strong>${{ item.get_total_price }}</strong>
+                        </div>
+                    </div>
+                    {% if not forloop.last %}<hr>{% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <!-- Order Summary -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Order Date:</strong> {{ order.created_at|date:"F j, Y" }}</p>
+                    <p><strong>Order Time:</strong> {{ order.created_at|time:"g:i A" }}</p>
+                    <p><strong>Total Items:</strong> {{ order.items.count }}</p>
+                    <p><strong>Total Amount:</strong> <span class="h5 text-primary">${{ order.total_amount }}</span></p>
+                </div>
+            </div>
+            
+            <!-- Shipping Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Shipping Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>{{ order.first_name }} {{ order.last_name }}</strong></p>
+                    <p class="mb-1">{{ order.address }}</p>
+                    <p class="mb-1">{{ order.city }}, {{ order.state }} {{ order.postal_code }}</p>
+                    <p class="mb-1">{{ order.country }}</p>
+                    <p class="mb-0"><strong>Phone:</strong> {{ order.phone }}</p>
+                    <p class="mb-0"><strong>Email:</strong> {{ order.email }}</p>
+                </div>
+            </div>
+            
+            <!-- Actions -->
+            <div class="d-grid gap-2">
+                <a href="{% url 'store:order_list' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Orders
+                </a>
+                <a href="{% url 'store:product_list' %}" class="btn btn-primary">
+                    <i class="fas fa-shopping-cart me-2"></i>Continue Shopping
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Shopping Cart - Omniferous{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Shopping Cart</h1>
+
+    {% if cart_items %}
+    <div class="row">
+        <!-- Cart Items -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Cart Items ({{ cart.get_total_items }} items)</h5>
+                </div>
+                <div class="card-body">
+                    {% for item in cart_items %}
+                    <div class="row align-items-center mb-3 pb-3 border-bottom">
+                        <div class="col-md-2">
+                            {% if item.product.image %}
+                            <img src="{{ item.product.image.url }}" class="img-fluid rounded" alt="{{ item.product.name }}">
+                        {% else %}
+                            <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                <i class="fas fa-image text-muted"></i>
+                            </div>
+                        {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <h6 class="mb-1">{{ item.product.name }}</h6>
+                            <p class="text-muted mb-0">{{ item.product.category.name }}</p>
+                        </div>
+                        <div class="col-md-2">
+                            {% if item.product.is_on_sale %}
+                            <span class="text-decoration-line-through text-muted">${{ item.product.price }}</span><br>
+                            <span class="text-danger fw-bold">${{ item.product.sale_price }}</span>
+                            {% else %}
+                            <span class="fw-bold">${{ item.product.price }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-2">
+                            <form method="POST" action="{% url 'store:update_cart_item' item.id %}" class="d-flex align-items-center">
+                                {% csrf_token %}
+                                <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.product.stock }}" class="form-control form-control-sm me-2" style="width: 60px;">
+                                <button type="submit" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </form>
+                        </div>
+                        <div class="col-md-1">
+                            <span class="fw-bold">${{ item.get_total_price }}</span>
+                        </div>
+                        <div class="col-md-1">
+                            <form method="POST" action="{% url 'store:remove_from_cart' item.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Cart Summary -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal ({{ cart.get_total_items }} items):</span>
+                        <span>${{ cart.get_total_price }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Shipping:</span>
+                        <span class="text-success">Free</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-3">
+                        <strong>Total:</strong>
+                        <strong class="fs-5">${{ cart.get_total_price }}</strong>
+                    </div>
+                    
+                    {% if user.is_authenticated %}
+                    <div class="d-grid">
+                        <a href="{% url 'store:checkout' %}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-credit-card me-2"></i>Proceed to Checkout
+                        </a>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Please <a href="{% url 'account_login' %}">login</a> to checkout.
+                    </div>
+                    <div class="d-grid">
+                        <a href="{% url 'account_login' %}" class="btn btn-primary">Login to Checkout</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Continue Shopping -->
+            <div class="card mt-3">
+                <div class="card-body text-center">
+                    <a href="{% url 'store:product_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Continue Shopping
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recommended Products -->
+    <section class="mt-5">
+        <h3>You might also like</h3>
+        <div class="row">
+            {% for product in recommended_products %}
+            <div class="col-md-3 mb-4">
+                <div class="card h-100">
+                                            {% if product.image %}
+                            <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
+                        {% else %}
+                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                <i class="fas fa-image fa-3x text-muted"></i>
+                            </div>
+                        {% endif %}
+                    <div class="card-body d-flex flex-column">
+                        <h6 class="card-title">{{ product.name }}</h6>
+                        <p class="card-text text-muted">{{ product.description|truncatewords:8 }}</p>
+                        <div class="mt-auto">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                {% if product.is_on_sale %}
+                                <span class="text-decoration-line-through text-muted">${{ product.price }}</span>
+                                <span class="text-danger fw-bold">${{ product.sale_price }}</span>
+                                {% else %}
+                                <span class="fw-bold">${{ product.price }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="d-grid">
+                                <a href="{% url 'store:product_detail' product.slug %}" class="btn btn-outline-primary btn-sm">View Details</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    {% else %}
+    <!-- Empty Cart -->
+    <div class="text-center py-5">
+        <i class="fas fa-shopping-cart fa-4x text-muted mb-4"></i>
+        <h3>Your cart is empty</h3>
+        <p class="text-muted mb-4">Looks like you haven't added any items to your cart yet.</p>
+        <a href="{% url 'store:product_list' %}" class="btn btn-primary btn-lg">
+            <i class="fas fa-shopping-bag me-2"></i>Start Shopping
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

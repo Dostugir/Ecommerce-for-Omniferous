@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Orders{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">My Orders</h2>
+    
+    {% if orders %}
+        <div class="row">
+            {% for order in orders %}
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Order #{{ order.order_number }}</h5>
+                            <span class="badge bg-{% if order.status == 'delivered' %}success{% elif order.status == 'shipped' %}info{% elif order.status == 'processing' %}warning{% else %}secondary{% endif %}">
+                                {{ order.get_status_display }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Date:</strong> {{ order.created_at|date:"F j, Y" }}</p>
+                        <p><strong>Total:</strong> ${{ order.total_amount }}</p>
+                        <p><strong>Items:</strong> {{ order.items.count }} item{{ order.items.count|pluralize }}</p>
+                        <p><strong>Payment Status:</strong> 
+                            <span class="badge bg-{% if order.payment_status == 'paid' %}success{% else %}warning{% endif %}">
+                                {{ order.payment_status|title }}
+                            </span>
+                        </p>
+                        <a href="{% url 'store:order_detail' order.id %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-eye me-2"></i>View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-shopping-bag fa-3x text-muted mb-3"></i>
+            <h4>No Orders Yet</h4>
+            <p class="text-muted">You haven't placed any orders yet.</p>
+            <a href="{% url 'store:product_list' %}" class="btn btn-primary">
+                <i class="fas fa-shopping-cart me-2"></i>Start Shopping
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

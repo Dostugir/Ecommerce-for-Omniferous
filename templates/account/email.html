@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}Email Addresses - Omniferous{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow">
+        <div class="card-header text-center">
+          <h3 class="mb-0">Manage email addresses</h3>
+        </div>
+        <div class="card-body">
+          {% if user.emailaddress_set.all %}
+          <ul class="list-group mb-3">
+            {% for emailaddress in user.emailaddress_set.all %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                {{ emailaddress.email }}
+                {% if emailaddress.primary %}<span class="badge bg-primary ms-2">Primary</span>{% endif %}
+                {% if emailaddress.verified %}<span class="badge bg-success ms-2">Verified</span>{% else %}<span class="badge bg-warning text-dark ms-2">Unverified</span>{% endif %}
+              </div>
+              <div class="btn-group">
+                {% if not emailaddress.primary %}
+                <form method="post" action="{% url 'account_email' %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="email" value="{{ emailaddress.email }}">
+                  <button class="btn btn-sm btn-outline-secondary" name="action_primary" type="submit">Make primary</button>
+                </form>
+                {% endif %}
+                {% if not emailaddress.verified %}
+                <form method="post" action="{% url 'account_email' %}" class="ms-2">
+                  {% csrf_token %}
+                  <input type="hidden" name="email" value="{{ emailaddress.email }}">
+                  <button class="btn btn-sm btn-outline-warning" name="action_send" type="submit">Re-send verification</button>
+                </form>
+                {% endif %}
+                <form method="post" action="{% url 'account_email' %}" class="ms-2">
+                  {% csrf_token %}
+                  <input type="hidden" name="email" value="{{ emailaddress.email }}">
+                  <button class="btn btn-sm btn-outline-danger" name="action_remove" type="submit">Remove</button>
+                </form>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="mb-3">You currently do not have any email addresses associated with your account.</p>
+          {% endif %}
+
+          <hr>
+          <h5>Add another email address</h5>
+          <form method="post" action="{% url 'account_email' %}">
+            {% csrf_token %}
+            <div class="input-group">
+              <input class="form-control" type="email" name="email" placeholder="you@example.com" required>
+              <button class="btn btn-primary" name="action_add" type="submit">Add</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+

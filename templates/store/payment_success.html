@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payment Successful - Order #{{ order.order_number }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <div class="card">
+                <div class="card-body">
+                    <div class="mb-4">
+                        <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                    </div>
+                    
+                    <h2 class="card-title text-success mb-3">Payment Successful!</h2>
+                    <p class="card-text">Thank you for your purchase. Your order has been confirmed.</p>
+                    
+                    <div class="alert alert-info">
+                        <h5>Order Details</h5>
+                        <p><strong>Order Number:</strong> {{ order.order_number }}</p>
+                        <p><strong>Total Amount:</strong> ${{ order.total_amount }}</p>
+                        <p><strong>Status:</strong> {{ order.get_status_display }}</p>
+                        <p><strong>Date:</strong> {{ order.created_at|date:"F j, Y" }}</p>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <a href="{% url 'store:order_detail' order.id %}" class="btn btn-primary me-2">
+                            <i class="fas fa-eye me-2"></i>View Order Details
+                        </a>
+                        <a href="{% url 'store:product_list' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-shopping-bag me-2"></i>Continue Shopping
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

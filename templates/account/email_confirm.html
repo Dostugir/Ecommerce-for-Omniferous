@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirm Email - Omniferous{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card shadow">
+        <div class="card-header text-center">
+          <h3 class="mb-0">Confirm your email</h3>
+        </div>
+        <div class="card-body">
+          {% if confirmation %}
+          <p>Click the button below to confirm <strong>{{ confirmation.email_address.email }}</strong>.</p>
+          <form method="post" action="{% url 'account_confirm_email' confirmation.key %}">
+            {% csrf_token %}
+            <div class="d-grid">
+              <button class="btn btn-primary" type="submit">Confirm email</button>
+            </div>
+          </form>
+          {% else %}
+          <p class="text-danger">Invalid confirmation link.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+
