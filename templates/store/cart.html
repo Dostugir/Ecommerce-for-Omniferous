@@ -33,10 +33,10 @@
                         </div>
                         <div class="col-md-2">
                             {% if item.product.is_on_sale %}
-                            <span class="text-decoration-line-through text-muted">${{ item.product.price }}</span><br>
-                            <span class="text-danger fw-bold">${{ item.product.sale_price }}</span>
+                            <span class="text-decoration-line-through text-muted">৳{{ item.product.price }}</span><br>
+                            <span class="text-danger fw-bold">৳{{ item.product.sale_price }}</span>
                             {% else %}
-                            <span class="fw-bold">${{ item.product.price }}</span>
+                            <span class="fw-bold">৳{{ item.product.price }}</span>
                             {% endif %}
                         </div>
                         <div class="col-md-2">
@@ -49,7 +49,7 @@
                             </form>
                         </div>
                         <div class="col-md-1">
-                            <span class="fw-bold">${{ item.get_total_price }}</span>
+                            <span class="fw-bold">৳{{ item.get_total_price }}</span>
                         </div>
                         <div class="col-md-1">
                             <form method="POST" action="{% url 'store:remove_from_cart' item.id %}">
@@ -74,7 +74,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between mb-2">
                         <span>Subtotal ({{ cart.get_total_items }} items):</span>
-                        <span>${{ cart.get_total_price }}</span>
+                        <span>৳{{ cart.get_total_price }}</span>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span>Shipping:</span>
@@ -83,7 +83,7 @@
                     <hr>
                     <div class="d-flex justify-content-between mb-3">
                         <strong>Total:</strong>
-                        <strong class="fs-5">${{ cart.get_total_price }}</strong>
+                        <strong class="fs-5">৳{{ cart.get_total_price }}</strong>
                     </div>
                     
                     {% if user.is_authenticated %}
@@ -134,10 +134,10 @@
                         <div class="mt-auto">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 {% if product.is_on_sale %}
-                                <span class="text-decoration-line-through text-muted">${{ product.price }}</span>
-                                <span class="text-danger fw-bold">${{ product.sale_price }}</span>
+                                <span class="text-decoration-line-through text-muted">৳{{ product.price }}</span>
+                                <span class="text-danger fw-bold">৳{{ product.sale_price }}</span>
                                 {% else %}
-                                <span class="fw-bold">${{ product.price }}</span>
+                                <span class="fw-bold">৳{{ product.price }}</span>
                                 {% endif %}
                             </div>
                             <div class="d-grid">

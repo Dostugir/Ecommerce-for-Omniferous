@@ -27,11 +27,11 @@
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <div>
                                 {% if wishlist_item.product.is_on_sale %}
-                                    <span class="text-decoration-line-through text-muted">${{ wishlist_item.product.price }}</span>
-                                    <span class="h5 text-danger mb-0">${{ wishlist_item.product.get_price }}</span>
+                                    <span class="text-decoration-line-through text-muted">৳{{ wishlist_item.product.price }}</span>
+                                    <span class="h5 text-danger mb-0">৳{{ wishlist_item.product.get_price }}</span>
                                     <span class="badge bg-danger ms-2">{{ wishlist_item.product.get_discount_percentage }}% OFF</span>
                                 {% else %}
-                                    <span class="h5 text-primary mb-0">${{ wishlist_item.product.get_price }}</span>
+                                    <span class="h5 text-primary mb-0">৳{{ wishlist_item.product.get_price }}</span>
                                 {% endif %}
                             </div>
                         </div>

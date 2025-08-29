@@ -70,11 +70,11 @@
             <!-- Price -->
             <div class="mb-3">
                 {% if product.is_on_sale %}
-                <span class="text-decoration-line-through text-muted fs-4">${{ product.price }}</span>
-                <span class="text-danger fs-3 fw-bold ms-2">${{ product.sale_price }}</span>
+                <span class="text-decoration-line-through text-muted fs-4">৳{{ product.price }}</span>
+                <span class="text-danger fs-3 fw-bold ms-2">৳{{ product.sale_price }}</span>
                 <span class="badge bg-danger ms-2">{{ product.get_discount_percentage }}% OFF</span>
                 {% else %}
-                <span class="fs-3 fw-bold">${{ product.price }}</span>
+                <span class="fs-3 fw-bold">৳{{ product.price }}</span>
                 {% endif %}
             </div>
 
@@ -160,10 +160,10 @@
                         <p class="card-text text-muted">{{ related_product.description|truncatewords:8 }}</p>
                         <div class="d-flex justify-content-between align-items-center">
                             {% if related_product.is_on_sale %}
-                            <span class="text-decoration-line-through text-muted">${{ related_product.price }}</span>
-                            <span class="text-danger fw-bold">${{ related_product.sale_price }}</span>
+                            <span class="text-decoration-line-through text-muted">৳{{ related_product.price }}</span>
+                            <span class="text-danger fw-bold">৳{{ related_product.sale_price }}</span>
                             {% else %}
-                            <span class="fw-bold">${{ related_product.price }}</span>
+                            <span class="fw-bold">৳{{ related_product.price }}</span>
                             {% endif %}
                         </div>
                         <a href="{% url 'store:product_detail' related_product.slug %}" class="btn btn-outline-primary btn-sm mt-2">View Details</a>

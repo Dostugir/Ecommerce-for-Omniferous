@@ -42,7 +42,7 @@
                             <span class="badge bg-secondary">{{ item.quantity }}</span>
                         </div>
                         <div class="col-md-2 text-end">
-                            <strong>${{ item.get_total_price }}</strong>
+                            <strong>৳{{ item.get_total_price }}</strong>
                         </div>
                     </div>
                     {% if not forloop.last %}<hr>{% endif %}
@@ -61,7 +61,7 @@
                     <p><strong>Order Date:</strong> {{ order.created_at|date:"F j, Y" }}</p>
                     <p><strong>Order Time:</strong> {{ order.created_at|time:"g:i A" }}</p>
                     <p><strong>Total Items:</strong> {{ order.items.count }}</p>
-                    <p><strong>Total Amount:</strong> <span class="h5 text-primary">${{ order.total_amount }}</span></p>
+                    <p><strong>Total Amount:</strong> <span class="h5 text-primary">৳{{ order.total_amount }}</span></p>
                 </div>
             </div>
             

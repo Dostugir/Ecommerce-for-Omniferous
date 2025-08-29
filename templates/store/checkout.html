@@ -75,7 +75,7 @@
                             <h6 class="mb-0">{{ item.product.name }}</h6>
                             <small class="text-muted">Qty: {{ item.quantity }}</small>
                         </div>
-                        <span>${{ item.get_total_price }}</span>
+                        <span>৳{{ item.get_total_price }}</span>
                     </div>
                     {% endfor %}
                     
@@ -83,7 +83,7 @@
                     
                     <div class="d-flex justify-content-between mb-2">
                         <span>Subtotal:</span>
-                        <span>${{ cart.get_total_price }}</span>
+                        <span>৳{{ cart.get_total_price }}</span>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span>Shipping:</span>
@@ -98,7 +98,7 @@
                     
                     <div class="d-flex justify-content-between">
                         <strong>Total:</strong>
-                        <strong class="fs-5">${{ cart.get_total_price }}</strong>
+                        <strong class="fs-5">৳{{ cart.get_total_price }}</strong>
                     </div>
                 </div>
             </div>
