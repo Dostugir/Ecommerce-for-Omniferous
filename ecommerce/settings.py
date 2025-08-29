@@ -76,9 +76,21 @@ TEMPLATES = [
 WSGI_APPLICATION = 'ecommerce.wsgi.application'
 
 # Database
-DATABASES = {
-    'default': dj_database_url.config(default=config('DATABASE_URL', default='sqlite:///db.sqlite3'))
-}
+# Use DATABASE_URL from environment if available, otherwise default to sqlite
+_database_url = config('DATABASE_URL', default=None)
+
+if _database_url:
+    DATABASES = {
+        'default': dj_database_url.config(default=_database_url)
+    }
+else:
+    # Fallback to SQLite for local development or if DATABASE_URL is not set
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = []
