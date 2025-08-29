@@ -20,15 +20,25 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 # Add APP_DOMAIN from environment variable for CSRF and other uses
 APP_DOMAIN = config('APP_DOMAIN', default=None)
 
+# --- DEBUGGING PRINTS ---
+print(f"DEBUG: APP_DOMAIN from env: {APP_DOMAIN}")
+# --- END DEBUGGING PRINTS ---
+
 if APP_DOMAIN:
     # Ensure ALLOWED_HOSTS includes the app domain
-    ALLOWED_HOSTS = [APP_DOMAIN.lstrip('https://').lstrip('http://')]
+    _parsed_domain = APP_DOMAIN.lstrip('https://').lstrip('http://').rstrip('/')
+    ALLOWED_HOSTS = [_parsed_domain]
     # For CSRF_TRUSTED_ORIGINS, we need the full scheme
-    CSRF_TRUSTED_ORIGINS = [APP_DOMAIN]
+    CSRF_TRUSTED_ORIGINS = [APP_DOMAIN.rstrip('/')]
 else:
     # Default for local development or if APP_DOMAIN is not set
     ALLOWED_HOSTS = ['*']
     CSRF_TRUSTED_ORIGINS = [] # Or include 'http://localhost:8000' for local dev
+
+# --- DEBUGGING PRINTS ---
+print(f"DEBUG: Final ALLOWED_HOSTS: {ALLOWED_HOSTS}")
+print(f"DEBUG: Final CSRF_TRUSTED_ORIGINS: {CSRF_TRUSTED_ORIGINS}")
+# --- END DEBUGGING PRINTS ---
 
 
 # Application definition
@@ -78,7 +88,7 @@ TEMPLATES = [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.messages',
                 'store.context_processors.categories_processor',
                 'store.context_processors.cart_processor',
             ],
@@ -190,3 +200,9 @@ if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_SSL_REDIRECT = True # Redirect HTTP to HTTPS
+    # --- DEBUGGING PRINTS ---
+    print(f"DEBUG: SESSION_COOKIE_SECURE: {SESSION_COOKIE_SECURE}")
+    print(f"DEBUG: CSRF_COOKIE_SECURE: {CSRF_COOKIE_SECURE}")
+    print(f"DEBUG: SECURE_SSL_REDIRECT: {SECURE_SSL_REDIRECT}")
+    print(f"DEBUG: SECURE_PROXY_SSL_HEADER: {SECURE_PROXY_SSL_HEADER}")
+    # --- END DEBUGGING PRINTS ---
