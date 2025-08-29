@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 from decouple import config
 import dj_database_url
+from urllib.parse import urlparse
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -16,7 +17,19 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = ['*']
+# Add APP_DOMAIN from environment variable for CSRF and other uses
+APP_DOMAIN = config('APP_DOMAIN', default=None)
+
+if APP_DOMAIN:
+    # Ensure ALLOWED_HOSTS includes the app domain
+    ALLOWED_HOSTS = [APP_DOMAIN.lstrip('https://').lstrip('http://')]
+    # For CSRF_TRUSTED_ORIGINS, we need the full scheme
+    CSRF_TRUSTED_ORIGINS = [APP_DOMAIN]
+else:
+    # Default for local development or if APP_DOMAIN is not set
+    ALLOWED_HOSTS = ['*']
+    CSRF_TRUSTED_ORIGINS = [] # Or include 'http://localhost:8000' for local dev
+
 
 # Application definition
 INSTALLED_APPS = [
@@ -173,3 +186,7 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') # Crucial for cloud proxies
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = True # Redirect HTTP to HTTPS
