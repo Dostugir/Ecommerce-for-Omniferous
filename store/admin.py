@@ -4,26 +4,31 @@ from .models import Category, Product, ProductImage, Review, Cart, CartItem, Ord
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ['name', 'slug', 'created_at']
+    list_display = ['name', 'slug', 'image_url', 'created_at']
     list_filter = ['created_at']
     search_fields = ['name', 'description']
     prepopulated_fields = {'slug': ('name',)}
+    fields = ('name', 'slug', 'description', 'image', 'image_url')
 
 
 class ProductImageInline(admin.TabularInline):
     model = ProductImage
     extra = 1
-    fields = ('image', 'image_url', 'alt_text', 'is_primary') # Add image_url here
+    fields = ('image', 'image_url', 'alt_text', 'is_primary')
 
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ['name', 'category', 'price', 'sale_price', 'stock', 'available', 'featured', 'created_at']
+    list_display = ['name', 'category', 'price', 'sale_price', 'stock', 'available', 'featured', 'image_url', 'created_at']
     list_filter = ['available', 'featured', 'category', 'created_at']
     list_editable = ['price', 'sale_price', 'stock', 'available', 'featured']
     search_fields = ['name', 'description']
     prepopulated_fields = {'slug': ('name',)}
     inlines = [ProductImageInline]
+    fields = (
+        'category', 'name', 'slug', 'description', 'price', 'sale_price',
+        'stock', 'available', 'featured', 'image', 'image_url'
+    )
 
 
 @admin.register(Review)

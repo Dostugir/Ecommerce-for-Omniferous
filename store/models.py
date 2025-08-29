@@ -9,6 +9,7 @@ class Category(models.Model):
     slug = models.SlugField(unique=True)
     description = models.TextField(blank=True)
     image = models.ImageField(upload_to='categories/', blank=True, null=True)
+    image_url = models.URLField(max_length=2000, blank=True, null=True) # New field for Category image URL
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -23,6 +24,8 @@ class Category(models.Model):
         return f'/category/{self.slug}/'
 
     def get_image_source(self):
+        if self.image_url:
+            return self.image_url
         if self.image:
             return self.image.url
         return "/static/images/placeholder.png" # Default placeholder
@@ -39,6 +42,7 @@ class Product(models.Model):
     available = models.BooleanField(default=True)
     featured = models.BooleanField(default=False)
     image = models.ImageField(upload_to='products/', blank=True, null=True)
+    image_url = models.URLField(max_length=2000, blank=True, null=True) # New field for Product primary image URL
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -52,7 +56,9 @@ class Product(models.Model):
         return f'/product/{self.slug}/'
 
     def get_image_source(self):
-        # Prioritize primary ProductImage, then direct image, then any other ProductImage
+        # Prioritize direct image_url, then primary ProductImage, then direct image, then any other ProductImage
+        if self.image_url:
+            return self.image_url
         primary_product_image = self.images.filter(is_primary=True).first()
         if primary_product_image:
             return primary_product_image.get_image_source()
