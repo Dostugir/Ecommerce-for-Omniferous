@@ -13,6 +13,7 @@ class CategoryAdmin(admin.ModelAdmin):
 class ProductImageInline(admin.TabularInline):
     model = ProductImage
     extra = 1
+    fields = ('image', 'image_url', 'alt_text', 'is_primary') # Add image_url here
 
 
 @admin.register(Product)

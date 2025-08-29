@@ -22,6 +22,11 @@ class Category(models.Model):
     def get_absolute_url(self):
         return f'/category/{self.slug}/'
 
+    def get_image_source(self):
+        if self.image:
+            return self.image.url
+        return "/static/images/placeholder.png" # Default placeholder
+
 
 class Product(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
@@ -46,6 +51,18 @@ class Product(models.Model):
     def get_absolute_url(self):
         return f'/product/{self.slug}/'
 
+    def get_image_source(self):
+        # Prioritize primary ProductImage, then direct image, then any other ProductImage
+        primary_product_image = self.images.filter(is_primary=True).first()
+        if primary_product_image:
+            return primary_product_image.get_image_source()
+        if self.image:
+            return self.image.url
+        first_product_image = self.images.first()
+        if first_product_image:
+            return first_product_image.get_image_source()
+        return "/static/images/placeholder.png" # Default placeholder
+
     def get_price(self):
         if self.sale_price:
             return self.sale_price
@@ -64,12 +81,20 @@ class Product(models.Model):
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
     image = models.ImageField(upload_to='products/', blank=True, null=True)
+    image_url = models.URLField(max_length=2000, blank=True, null=True) # New field for image URL
     alt_text = models.CharField(max_length=200, blank=True)
     is_primary = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.product.name} - {self.alt_text}"
+
+    def get_image_source(self):
+        if self.image_url:
+            return self.image_url
+        if self.image:
+            return self.image.url
+        return "/static/images/placeholder.png" # Or a default placeholder image path
 
 
 class Review(models.Model):

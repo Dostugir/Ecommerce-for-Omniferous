@@ -27,7 +27,7 @@
                     <div class="row mb-3">
                         <div class="col-md-2">
                             {% if item.product.image %}
-                                <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="img-fluid rounded">
+                                <img src="{{ item.product.get_image_source }}" alt="{{ item.product.name }}" class="img-fluid rounded">
                             {% else %}
                                 <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
                                     <i class="fas fa-image text-muted"></i>
