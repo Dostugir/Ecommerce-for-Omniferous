@@ -170,7 +170,12 @@ ACCOUNT_LOGIN_METHOD = 'email'
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_RATE_LIMITS = {
-    'login_failed': '5/5m',
+    # 'login_failed': '5/300s', # Commented out to disable rate limiting for login failed attempts
+}
+
+# Allauth forms
+ACCOUNT_FORMS = {
+    'login': 'ecommerce.forms.CustomLoginForm',
 }
 
 # Email settings (for development)

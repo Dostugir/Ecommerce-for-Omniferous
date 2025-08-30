@@ -37,7 +37,12 @@
 
         <!-- Product Info -->
         <div class="col-md-6">
-            <h1 class="mb-3">{{ product.name }}</h1>
+            <h1 class="mb-3 d-flex align-items-center">
+                {{ product.name }}
+                {% if product.is_in_flash_sale %}
+                <span class="badge bg-warning text-dark ms-3">⚡ Flash Sale</span>
+                {% endif %}
+            </h1>
             
             <!-- Rating -->
             <div class="mb-3">
@@ -83,18 +88,21 @@
 
             <!-- Add to Cart Form -->
             {% if product.stock > 0 %}
-            <form method="POST" action="{% url 'store:add_to_cart' product.id %}" class="mb-4">
+            <form method="POST" action="{% url 'store:buy_now_direct' product.id %}" class="mb-4">
                 {% csrf_token %}
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-4" style="display: none;">
                         <label for="quantity" class="form-label">Quantity</label>
-                        <input type="number" class="form-control" id="quantity" name="quantity" value="1" min="1" max="{{ product.stock }}">
+                        <input type="hidden" class="form-control" id="quantity" name="quantity" value="1" min="1" max="{{ product.stock }}">
                     </div>
                     <div class="col-md-8">
                         <label class="form-label">&nbsp;</label>
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary btn-lg">
+                        <div class="d-grid d-md-flex gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg flex-fill">
                                 <i class="fas fa-shopping-cart me-2"></i>Add to Cart
+                            </button>
+                            <button type="submit" class="btn btn-success btn-lg flex-fill">
+                                <i class="fas fa-money-bill-wave me-2"></i>Buy Now
                             </button>
                         </div>
                     </div>
@@ -105,10 +113,11 @@
             <!-- Wishlist -->
             {% if user.is_authenticated %}
             <div class="mb-4">
-                <form method="POST" action="{% url 'store:add_to_wishlist' product.id %}" class="d-inline">
+                <form method="POST" action="{% url 'store:add_to_wishlist' product.id %}" class="d-inline ajax-wishlist-form">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-outline-danger">
-                        <i class="fas fa-heart me-2"></i>Add to Wishlist
+                        <i class="{% if is_in_wishlist %}fas{% else %}far{% endif %} fa-heart me-2"></i>
+                        {% if is_in_wishlist %}Remove from Wishlist{% else %}Add to Wishlist{% endif %}
                     </button>
                 </form>
             </div>
@@ -127,41 +136,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Related Products -->
-    {% if related_products %}
-    <section class="mt-5">
-        <h3>Related Products</h3>
-        <div class="row">
-            {% for related_product in related_products %}
-            <div class="col-md-3 mb-4">
-                <div class="card h-100">
-                                            {% if related_product.image %}
-                            <img src="{{ related_product.get_image_source }}" class="card-img-top" alt="{{ related_product.name }}" style="height: 200px; object-fit: cover;">
-                        {% else %}
-                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-                                <i class="fas fa-image fa-3x text-muted"></i>
-                            </div>
-                        {% endif %}
-                    <div class="card-body">
-                        <h6 class="card-title">{{ related_product.name }}</h6>
-                        <p class="card-text text-muted">{{ related_product.description|truncatewords:8 }}</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            {% if related_product.is_on_sale %}
-                            <span class="text-decoration-line-through text-muted">৳{{ related_product.price }}</span>
-                            <span class="text-danger fw-bold">৳{{ related_product.sale_price }}</span>
-                            {% else %}
-                            <span class="fw-bold">৳{{ related_product.price }}</span>
-                            {% endif %}
-                        </div>
-                        <a href="{% url 'store:product_detail' related_product.slug %}" class="btn btn-outline-primary btn-sm mt-2">View Details</a>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </section>
-    {% endif %}
 
     <!-- Reviews Section -->
     <section class="mt-5">
@@ -251,6 +225,68 @@
             </div>
         </div>
     </section>
+
+    <!-- Related Products -->
+    {% if related_products %}
+    <section class="mt-5">
+        <h3>Related Products</h3>
+        <div class="row">
+            {% for related_product in related_products %}
+            <div class="col-md-3 mb-4">
+                <div class="card h-100">
+                    <a href="{% url 'store:product_detail' related_product.slug %}">
+                        <img src="{{ related_product.get_image_source }}" class="card-img-top" alt="{{ related_product.name }}" style="height: 200px; object-fit: cover;">
+                    </a>
+                    <div class="card-body">
+                        <h6 class="card-title">{{ related_product.name }}</h6>
+                        <p class="card-text text-muted">{{ related_product.description|truncatewords:8 }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            {% if related_product.is_on_sale %}
+                            <span class="text-decoration-line-through text-muted">৳{{ related_product.price }}</span>
+                            <span class="text-danger fw-bold">৳{{ related_product.sale_price }}</span>
+                            {% else %}
+                            <span class="fw-bold">৳{{ related_product.price }}</span>
+                            {% endif %}
+                        </div>
+                        <a href="{% url 'store:product_detail' related_product.slug %}" class="btn btn-outline-primary btn-sm mt-2">View Details</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Trending Products -->
+    {% if trending_products %}
+    <section class="mt-5">
+        <h3>Trending Products</h3>
+        <div class="row">
+            {% for trending_product in trending_products %}
+            <div class="col-md-3 mb-4">
+                <div class="card h-100">
+                    <a href="{% url 'store:product_detail' trending_product.slug %}">
+                        <img src="{{ trending_product.get_image_source }}" class="card-img-top" alt="{{ trending_product.name }}" style="height: 200px; object-fit: cover;">
+                    </a>
+                    <div class="card-body">
+                        <h6 class="card-title">{{ trending_product.name }}</h6>
+                        <p class="card-text text-muted">{{ trending_product.description|truncatewords:8 }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            {% if trending_product.is_on_sale %}
+                            <span class="text-decoration-line-through text-muted">৳{{ trending_product.price }}</span>
+                            <span class="text-danger fw-bold">৳{{ trending_product.sale_price }}</span>
+                            {% else %}
+                            <span class="fw-bold">৳{{ trending_product.price }}</span>
+                            {% endif %}
+                        </div>
+                        <a href="{% url 'store:product_detail' trending_product.slug %}" class="btn btn-outline-primary btn-sm mt-2">View Details</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
 </div>
 
 <script>

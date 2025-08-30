@@ -100,7 +100,7 @@
 
     <!-- Messages -->
     {% if messages %}
-    <div class="container mt-3">
+    <div class="container mt-3" id="django-messages-container">
         {% for message in messages %}
         <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
             {{ message }}
@@ -109,6 +109,11 @@
         {% endfor %}
     </div>
     {% endif %}
+
+    <!-- AJAX Messages Container -->
+    <div id="ajax-message-container" class="container mt-3" style="position: fixed; top: 70px; left: 50%; transform: translateX(-50%); z-index: 1050; width: 50%; max-width: 500px;">
+        <!-- AJAX messages will be inserted here -->
+    </div>
 
     <!-- Main Content -->
     <main class="py-4">
@@ -154,6 +159,107 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Custom JS -->
     <script src="{% static 'js/main.js' %}"></script>
-    {% block extra_js %}{% endblock %}
+    {% block extra_js %}
+    <script>
+        $(document).ready(function() {
+            // Auto-hide standard Django messages after 2 seconds
+            $('#django-messages-container .alert').each(function() {
+                var $alert = $(this);
+                setTimeout(function() {
+                    $alert.alert('close');
+                }, 2000); // 2 seconds
+            });
+
+            // Intercept all 'Add to Cart' form submissions
+            $('form[action*="add_to_cart"]').on('submit', function(e) {
+                e.preventDefault(); // Prevent default form submission
+
+                var form = $(this);
+                var url = form.attr('action');
+                var method = form.attr('method');
+                var formData = form.serialize();
+
+                $.ajax({
+                    url: url,
+                    method: method,
+                    data: formData,
+                    success: function(response) {
+                        if (response.success) {
+                            // Update cart count in navbar
+                            $('.navbar-nav .badge.bg-danger').text(response.cart_count);
+                            // displayAjaxMessage(response.message, 'success'); // Removed success message
+                        } else {
+                            // Display error message from server
+                            displayAjaxMessage(response.message, 'danger');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        // Handle AJAX error
+                        displayAjaxMessage('An error occurred. Please try again.', 'danger');
+                        console.error("AJAX Error:", status, error);
+                    }
+                });
+            });
+
+            // Intercept all 'Add to Wishlist' and 'Remove from Wishlist' form submissions
+            $('form[action*="wishlist"]').on('submit', function(e) {
+                e.preventDefault(); // Prevent default form submission
+
+                var form = $(this);
+                var url = form.attr('action');
+                var method = form.attr('method');
+                var formData = form.serialize();
+
+                $.ajax({
+                    url: url,
+                    method: method,
+                    data: formData,
+                    success: function(response) {
+                        if (response.success) {
+                            // Update UI based on action (add/remove)
+                            if (response.action === 'added') {
+                                // Optionally update heart icon to filled or similar
+                                form.find('.fa-heart').removeClass('far').addClass('fas');
+                                // You might want to change the form action to remove from wishlist
+                                // form.attr('action', url.replace('add_to_wishlist', 'remove_from_wishlist'));
+                            } else if (response.action === 'removed') {
+                                // Optionally update heart icon to empty or similar
+                                form.find('.fa-heart').removeClass('fas').addClass('far');
+                                // You might want to remove the entire card if on wishlist page
+                                if (form.closest('.wishlist-item-card').length) {
+                                    form.closest('.wishlist-item-card').remove();
+                                }
+                            } else if (response.action === 'exists') {
+                                // Product already in wishlist, no UI change needed besides the silent message
+                            }
+                            // No success message needed as per user request
+                        } else {
+                            displayAjaxMessage(response.message, 'danger');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        displayAjaxMessage('An error occurred. Please try again.', 'danger');
+                        console.error("AJAX Wishlist Error:", status, error);
+                    }
+                });
+            });
+
+            function displayAjaxMessage(message, type) {
+                var container = $('#ajax-message-container');
+                var alertHtml = `
+                    <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                        ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `;
+                container.append(alertHtml);
+                // Automatically hide the message after 1 second
+                setTimeout(function() {
+                    container.find('.alert').first().alert('close');
+                }, 1000); // Changed from 5000 to 1000 milliseconds
+            }
+        });
+    </script>
+    {% endblock %}
 </body>
 </html>

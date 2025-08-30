@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}All Reviews - Omniferous{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h1 class="mb-4 text-center">All Customer Reviews</h1>
+
+    {% if reviews %}
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                {% for review in reviews %}
+                    <div class="card mb-3 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title d-flex justify-content-between align-items-center">
+                                <span>{{ review.product.name }}</span>
+                                <small class="text-muted">by {{ review.user.username }}</small>
+                            </h5>
+                            <div class="mb-2">
+                                {% for _ in "x"|ljust:review.rating %}<i class="fas fa-star text-warning"></i>{% endfor %}
+                                {% for _ in "x"|ljust:"5"|slice:review.rating %}<i class="far fa-star text-warning"></i>{% endfor %}
+                            </div>
+                            <p class="card-text">{{ review.comment }}</p>
+                            <p class="card-text"><small class="text-muted">{{ review.created_at|date:"F j, Y" }}</small></p>
+                            <a href="{% url 'store:product_detail' review.product.slug %}" class="btn btn-sm btn-outline-primary">View Product</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        {% if reviews.has_other_pages %}
+        <nav aria-label="Review pagination" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if reviews.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ reviews.previous_page_number }}">Previous</a>
+                </li>
+                {% endif %}
+                
+                {% for num in reviews.paginator.page_range %}
+                {% if reviews.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+                {% elif num > reviews.number|add:'-3' and num < reviews.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                </li>
+                {% endif %}
+                {% endfor %}
+                
+                {% if reviews.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ reviews.next_page_number }}">Next</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-star-half-alt fa-4x text-muted mb-4"></i>
+            <h3>No reviews yet!</h3>
+            <p class="text-muted">Be the first to leave a review for one of our amazing products.</p>
+            <a href="{% url 'store:product_list' %}" class="btn btn-primary">Browse Products</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

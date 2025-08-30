@@ -1,5 +1,82 @@
 /* Custom styles for Omniferous */
 
+/* Flash Sale Section */
+.flash-sale-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 1rem;
+}
+
+.on-sale-now {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #fd7e14; /* Orange color from the image */
+    border-bottom: 2px solid #fd7e14;
+    padding-bottom: 5px;
+}
+
+.shop-all-btn {
+    border-color: #fd7e14;
+    color: #fd7e14;
+    font-weight: 600;
+}
+
+.shop-all-btn:hover {
+    background-color: #fd7e14;
+    color: #fff;
+}
+
+.flash-sale-products-container {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+}
+
+.flash-sale-products-container::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
+.flash-sale-card {
+    flex: 0 0 auto;
+    width: 200px; /* Fixed width for each card as in the image */
+    margin-right: 15px;
+}
+
+.flash-sale-card .card-img-top {
+    height: 180px;
+    object-fit: cover;
+    border-bottom: 1px solid #eee;
+    padding: 10px;
+}
+
+.flash-sale-card .card-body {
+    padding: 10px;
+    text-align: left;
+}
+
+.flash-sale-card .card-title {
+    font-size: 1rem;
+    margin-bottom: 5px;
+    min-height: 48px; /* To prevent title wrap issues */
+    overflow: hidden;
+}
+
+.flash-sale-card .text-danger {
+    font-size: 1.1rem;
+}
+
+.flash-sale-card .text-muted.small {
+    font-size: 0.85rem;
+}
+
+.flash-sale-card .btn {
+    font-size: 0.85rem;
+    padding: 5px 10px;
+}
+
 /* Hero Section */
 .hero-section {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -16,6 +93,8 @@
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
     border: none;
     border-radius: 10px;
+    width: 250px; /* Make cards slightly smaller overall */
+    margin: 0 auto; /* Center the cards if they are in a flex/grid layout */
 }
 
 .card:hover {
@@ -47,6 +126,7 @@
 /* Stars Rating */
 .stars {
     color: #ffc107;
+    font-size: 1.1rem; /* Make stars larger */
 }
 
 .stars i {
@@ -219,9 +299,48 @@ footer a:hover {
 /* Category Cards */
 .category-card {
     text-align: center;
-    padding: 20px;
+    padding: 0; /* Remove padding */
     border-radius: 10px;
     transition: all 0.3s ease-in-out;
+    width: 150px; /* Set width for square card based on image */
+    height: 150px; /* Set height for square card based on image */
+    margin: 0 auto; /* Center the cards */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.category-card .card-img-top {
+    height: 100px; /* Adjusted image height to fit cube shape and aspect ratio from image */
+    width: 100%; /* Ensure image takes full width */
+    object-fit: cover;
+    border-bottom: none; /* Remove border */
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+.category-card .card-body {
+    padding: 10px 5px; /* Adjust padding for card body */
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+.category-card .card-title {
+    font-size: 1rem; /* Adjust font size for title */
+    margin: 0; /* Remove margins */
+    white-space: normal; /* Allow text wrapping */
+    overflow: visible; /* Make overflow visible */
+    text-overflow: clip; /* Remove ellipsis */
+    text-align: center;
+}
+
+.category-card .btn.btn-outline-primary {
+    display: none; /* Hide button */
 }
 
 .category-card:hover {
@@ -256,6 +375,7 @@ footer a:hover {
 .badge {
     border-radius: 6px;
     font-weight: 500;
+    font-size: 0.95rem; /* Make discount percentage slightly larger */
 }
 
 /* Form Styles */

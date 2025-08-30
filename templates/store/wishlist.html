@@ -10,7 +10,7 @@
     {% if wishlist_items %}
         <div class="row">
             {% for wishlist_item in wishlist_items %}
-            <div class="col-md-4 mb-4">
+            <div class="col-md-4 mb-4 wishlist-item-card">
                 <div class="card h-100">
                     {% if wishlist_item.product.image %}
                         <img src="{{ wishlist_item.product.get_image_source }}" class="card-img-top" alt="{{ wishlist_item.product.name }}" style="height: 200px; object-fit: cover;">
@@ -37,7 +37,7 @@
                         </div>
                         
                         <div class="d-flex gap-2">
-                            <form method="POST" action="{% url 'store:add_to_cart' wishlist_item.product.id %}" class="flex-grow-1">
+                            <form method="POST" action="{% url 'store:add_to_cart' wishlist_item.product.id %}" class="flex-grow-1 ajax-add-to-cart-form">
                                 {% csrf_token %}
                                 <input type="hidden" name="quantity" value="1">
                                 <button type="submit" class="btn btn-primary w-100" {% if wishlist_item.product.stock == 0 %}disabled{% endif %}>
@@ -46,7 +46,7 @@
                                 </button>
                             </form>
                             
-                            <form method="POST" action="{% url 'store:remove_from_wishlist' wishlist_item.product.id %}">
+                            <form method="POST" action="{% url 'store:remove_from_wishlist' wishlist_item.product.id %}" class="ajax-wishlist-form">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-outline-danger" title="Remove from wishlist">
                                     <i class="fas fa-trash"></i>

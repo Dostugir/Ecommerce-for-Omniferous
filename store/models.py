@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 from decimal import Decimal
+from django.db.models import Avg # Import Avg
 
 
 class Category(models.Model):
@@ -28,7 +29,7 @@ class Category(models.Model):
             return self.image_url
         if self.image:
             return self.image.url
-        return "/static/images/placeholder.png" # Default placeholder
+        return "/static/images/placeholder.html" # Default placeholder
 
 
 class Product(models.Model):
@@ -67,7 +68,7 @@ class Product(models.Model):
         first_product_image = self.images.first()
         if first_product_image:
             return first_product_image.get_image_source()
-        return "/static/images/placeholder.png" # Default placeholder
+        return "/static/images/placeholder.html" # Default placeholder
 
     def get_price(self):
         if self.sale_price:
@@ -82,6 +83,20 @@ class Product(models.Model):
 
     def is_on_sale(self):
         return self.sale_price is not None and self.sale_price < self.price
+
+    def get_average_rating(self):
+        # Use aggregate to calculate the average rating, returns None if no reviews
+        return self.reviews.aggregate(Avg('rating'))['rating__avg']
+
+    def is_in_flash_sale(self):
+        from django.utils import timezone
+        now = timezone.now()
+        return self.flashsaleitem_set.filter(
+            campaign__is_active=True,
+            campaign__start_date__lte=now,
+            campaign__end_date__gte=now,
+            quantity_available__gt=0
+        ).exists()
 
 
 class ProductImage(models.Model):
@@ -100,7 +115,7 @@ class ProductImage(models.Model):
             return self.image_url
         if self.image:
             return self.image.url
-        return "/static/images/placeholder.png" # Or a default placeholder image path
+        return "/static/images/placeholder.html" # Or a default placeholder image path
 
 
 class Review(models.Model):
@@ -225,3 +240,75 @@ class Wishlist(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.product.name}"
+
+
+class Ad(models.Model):
+    name = models.CharField(max_length=200)
+    image = models.ImageField(upload_to='ads/', blank=True, null=True)
+    image_url = models.URLField(max_length=2000, blank=True, null=True)
+    link = models.URLField(max_length=2000, blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = 'Ads'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.name
+
+    def get_image_source(self):
+        if self.image_url:
+            return self.image_url
+        if self.image:
+            return self.image.url
+        return "/static/images/placeholder.html"
+
+
+class FlashSaleCampaign(models.Model):
+    name = models.CharField(max_length=200)
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = 'Flash Sale Campaigns'
+        ordering = ['start_date']
+
+    def __str__(self):
+        return self.name
+
+    def is_currently_active(self):
+        from django.utils import timezone
+        now = timezone.now()
+        return self.is_active and self.start_date <= now <= self.end_date
+
+
+class FlashSaleItem(models.Model):
+    campaign = models.ForeignKey(FlashSaleCampaign, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    sale_price = models.DecimalField(max_digits=10, decimal_places=2)
+    quantity_available = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['campaign', 'product']
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.product.name} ({self.campaign.name})"
+
+    def is_available(self):
+        return self.campaign.is_currently_active() and self.quantity_available > 0
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs) # Call the original save method first
+        # Update the associated product's sale_price
+        if self.product:
+            # Fetch a fresh instance of the product to ensure we're not working with a stale object
+            product_instance = self.product.__class__.objects.get(pk=self.product.pk)
+            product_instance.sale_price = self.sale_price
+            product_instance.save()
