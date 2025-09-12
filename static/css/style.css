@@ -380,8 +380,41 @@ footer a:hover {
 
 /* Form Styles */
 .form-label {
-    font-weight: 500;
-    color: #495057;
+    font-weight: 600; /* Bolder labels */
+    color: #343a40; /* Darker text for labels */
+    font-size: 1.1rem; /* Larger font for labels */
+    margin-bottom: 0.5rem;
+}
+
+.form-control {
+    border-radius: 0.5rem; /* Slightly larger border-radius */
+    border: 1px solid #ced4da; /* Consistent border */
+    padding: 0.75rem 1rem; /* Increased padding for larger input fields */
+    font-size: 1.1rem; /* Larger font size for input text */
+    height: auto; /* Allow height to adjust with padding */
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.form-control:focus {
+    border-color: #80bdff; /* Standard Bootstrap focus color */
+    box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25); /* Standard Bootstrap focus shadow */
+}
+
+/* Crispy Forms adjustments for spacing */
+.form-group {
+    margin-bottom: 1.5rem; /* Increased vertical space between form groups */
+}
+
+.form-row .form-group {
+    margin-bottom: 0; /* Reset margin for form groups within a row, as row handles spacing */
+}
+
+.form-row {
+    margin-bottom: 1.5rem; /* Add margin to rows for spacing between rows of fields */
+}
+
+.checkout-form .form-control {
+    margin-bottom: 0; /* Remove specific checkout form control margin as handled by form-group */
 }
 
 /* Card Headers */

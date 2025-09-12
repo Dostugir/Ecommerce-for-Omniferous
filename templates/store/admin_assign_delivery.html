@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Assign Delivery Man{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Assign Delivery Man to Order #{{ order.order_number }}</h4>
+                </div>
+                <div class="card-body">
+                    <p class="mb-3"><strong>Customer:</strong> {{ order.first_name }} {{ order.last_name }} ({{ order.email }})</p>
+                    <p class="mb-4"><strong>Shipping Address:</strong> {{ order.address }}, {{ order.city }}, {{ order.state }}, {{ order.postal_code }}, {{ order.country }}</p>
+
+                    <form method="POST">
+                        {% csrf_token %}
+                        {% crispy form %}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

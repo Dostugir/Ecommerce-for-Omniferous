@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Delivery Man Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Delivery Man Dashboard</h2>
+    <p>Welcome, {{ delivery_man.user.username }}!</p>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <h3 class="mt-4">Assigned Orders</h3>
+    {% if orders %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Order Number</th>
+                    <th>Customer Name</th>
+                    <th>Address</th>
+                    <th>Status</th>
+                    <th>Payment Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td><a href="{% url 'store:order_detail' order.id %}">{{ order.order_number }}</a></td>
+                    <td>{{ order.first_name }} {{ order.last_name }}</td>
+                    <td>{{ order.address }}, {{ order.city }}</td>
+                    <td>
+                        <span id="order-status-{{ order.id }}">{{ order.get_status_display }}</span>
+                    </td>
+                    <td>
+                        {% if order.payment_status == 'paid' or order.payment_status == 'Paid' %}
+                            <span class="badge bg-success">Paid</span>
+                        {% elif order.payment_status == 'pending' or order.payment_status == 'Pending' %}
+                            <span class="badge bg-warning">Pending</span>
+                        {% elif order.payment_status == 'completed' or order.payment_status == 'Completed' %}
+                            <span class="badge bg-success">Paid</span>
+                        {% elif order.stripe_payment_intent %}
+                            <span class="badge bg-info">Processing</span>
+                        {% else %}
+                            <span class="badge bg-danger">Not Paid</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <select class="form-select form-select-sm status-selector" data-order-id="{{ order.id }}">
+                            {% for status_value, status_label in STATUS_CHOICES %}
+                                <option value="{{ status_value }}" {% if order.status == status_value %}selected{% endif %}>
+                                    {{ status_label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <button class="btn btn-sm btn-primary mt-2 update-status-btn" data-order-id="{{ order.id }}">Update</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <p>No orders assigned yet.</p>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.update-status-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const orderId = this.dataset.orderId;
+                const statusSelector = document.querySelector(`.status-selector[data-order-id="${orderId}"]`);
+                const newStatus = statusSelector.value;
+
+                fetch(`/delivery/update_status/${orderId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `status=${newStatus}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById(`order-status-${orderId}`).innerText = statusSelector.options[statusSelector.selectedIndex].text;
+                        // Clear any existing messages before reload
+                        const messageContainer = document.getElementById('django-messages-container');
+                        if (messageContainer) {
+                            messageContainer.innerHTML = '';
+                        }
+                        // Reload to show Django messages
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while updating status.');
+                });
+            });
+        });
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    });
+</script>
+{% endblock %}

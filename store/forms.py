@@ -1,7 +1,9 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.models import User
-from .models import Review, Order
+from django.contrib.auth.models import User, Group
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, Submit, Row, Column, Field
+from .models import Review, Order, DeliveryMan
 
 
 class UserRegistrationForm(UserCreationForm):
@@ -81,6 +83,31 @@ class CheckoutForm(forms.ModelForm):
             'country': forms.TextInput(attrs={'class': 'form-control'}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            Row(
+                Column('first_name', css_class='form-group col-md-6 mb-0'),
+                Column('last_name', css_class='form-group col-md-6 mb-0'),
+                css_class='form-row'
+            ),
+            Row(
+                Column('email', css_class='form-group col-md-6 mb-0'),
+                Column('phone', css_class='form-group col-md-6 mb-0'),
+                css_class='form-row'
+            ),
+            'address',
+            Row(
+                Column('city', css_class='form-group col-md-4 mb-0'),
+                Column('state', css_class='form-group col-md-4 mb-0'),
+                Column('postal_code', css_class='form-group col-md-4 mb-0'),
+                css_class='form-row'
+            ),
+            'country',
+            Submit('submit', 'Proceed to Payment', css_class='btn btn-primary btn-lg mt-4')
+        )
+
 
 class ProductSearchForm(forms.Form):
     query = forms.CharField(
@@ -131,3 +158,20 @@ class ProductSearchForm(forms.Form):
         self.fields['category'].choices = [('', 'All Categories')] + [
             (cat.slug, cat.name) for cat in categories
         ]
+
+
+class AssignDeliveryForm(forms.Form):
+    delivery_man = forms.ModelChoiceField(
+        queryset=DeliveryMan.delivery_men.filter(is_available=True),
+        empty_label="Select Delivery Man",
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            Field('delivery_man'),
+            Submit('submit', 'Assign Delivery Man', css_class='btn btn-success mt-3')
+        )

@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from .decorators import delivery_man_required, staff_required # Import the new decorator
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Q, Avg, Count, Exists, OuterRef # Import Exists and OuterRef
@@ -11,12 +12,13 @@ from django.contrib.auth import login
 import stripe
 import json
 from django.utils import timezone # Import timezone for flash sales
+from django import forms # Import forms for OrderStatusUpdateForm
 
 from .models import (
     Product, Category, Cart, CartItem, Order, OrderItem, 
-    Review, Wishlist, Ad, FlashSaleCampaign, FlashSaleItem # Add new models
+    Review, Wishlist, Ad, FlashSaleCampaign, FlashSaleItem, DeliveryMan # Add new models
 )
-from .forms import ReviewForm, CheckoutForm, ProductSearchForm, UserRegistrationForm
+from .forms import ReviewForm, CheckoutForm, ProductSearchForm, UserRegistrationForm, AssignDeliveryForm # Add AssignDeliveryForm
 
 # Initialize Stripe
 try:
@@ -253,7 +255,7 @@ def category_detail(request, slug):
         # If it's an AJAX request, render only the product grid partial
         rendered_html = render(request, 'store/_product_grid.html', context).content.decode('utf-8')
         return JsonResponse({'html': rendered_html, 'count': page_obj.paginator.count})
-    
+
     return render(request, 'store/category_detail.html', context)
 
 
@@ -274,14 +276,27 @@ def get_or_create_cart(request):
 
 def cart_detail(request):
     """Shopping cart page"""
-    cart = get_or_create_cart(request)
-    cart_items = cart.items.all()
-    
-    context = {
-        'cart': cart,
-        'cart_items': cart_items,
-    }
-    return render(request, 'store/cart.html', context)
+    try:
+        cart = get_or_create_cart(request)
+        cart_items = cart.items.all()
+        
+        # Get recommended products (exclude products already in cart)
+        cart_product_ids = cart_items.values_list('product_id', flat=True)
+        recommended_products = Product.objects.filter(available=True).exclude(id__in=cart_product_ids).order_by('?')[:4]
+        
+        context = {
+            'cart': cart,
+            'cart_items': cart_items,
+            'recommended_products': recommended_products,
+        }
+        return render(request, 'store/cart.html', context)
+    except Exception as e:
+        messages.error(request, f"Error loading cart: {str(e)}")
+        return render(request, 'store/cart.html', {
+            'cart': None,
+            'cart_items': [],
+            'recommended_products': [],
+        })
 
 
 @require_POST
@@ -511,12 +526,138 @@ def order_list(request):
     return render(request, 'store/order_list.html', context)
 
 
+@staff_required
+def admin_assign_delivery(request, order_id):
+    """Admin interface to assign a delivery man to an order"""
+    order = get_object_or_404(Order, id=order_id)
+    
+    if request.method == 'POST':
+        form = AssignDeliveryForm(request.POST)
+        if form.is_valid():
+            delivery_man = form.cleaned_data['delivery_man']
+            order.assigned_to = delivery_man
+            order.status = 'shipped' # Automatically set to 'shipped' when assigned
+            order.save()
+            messages.success(request, f"Order #{order.order_number} assigned to {delivery_man.user.username}.")
+            return redirect('store:order_detail', order_id=order.id)
+    else:
+        form = AssignDeliveryForm()
+    
+    context = {
+        'order': order,
+        'form': form,
+    }
+    return render(request, 'store/admin_assign_delivery.html', context)
+
+
+@delivery_man_required
+def delivery_man_dashboard(request):
+    """Delivery man dashboard to view assigned orders"""
+    # Ensure the logged-in user is a delivery man
+    try:
+        delivery_man = request.user.delivery_profile
+    except DeliveryMan.DoesNotExist:
+        messages.error(request, "You are not authorized to access this page.")
+        return redirect('store:home') # Redirect to home or a suitable unauthorized page
+
+    orders = Order.objects.filter(assigned_to=delivery_man).order_by('-created_at')
+
+    context = {
+        'delivery_man': delivery_man,
+        'orders': orders,
+        'STATUS_CHOICES': Order.STATUS_CHOICES,
+    }
+    response = render(request, 'store/delivery_man_dashboard.html', context)
+    # Add cache control headers to prevent duplicate messages
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    return response
+
+
+@delivery_man_required
+@require_POST
+def update_delivery_status(request, order_id):
+    """API endpoint for delivery man to update order status"""
+    try:
+        delivery_man = request.user.delivery_profile
+    except DeliveryMan.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
+
+    order = get_object_or_404(Order, id=order_id, assigned_to=delivery_man)
+    new_status = request.POST.get('status')
+
+    # Validate new_status against STATUS_CHOICES
+    valid_statuses = [choice[0] for choice in Order.STATUS_CHOICES]
+    if new_status and new_status in valid_statuses:
+        order.status = new_status
+        order.save()
+        messages.success(request, f"Order #{order.order_number} status updated to {new_status}.")
+        return JsonResponse({'success': True, 'message': 'Status updated successfully'})
+    else:
+        return JsonResponse({'success': False, 'message': 'Invalid status provided'}, status=400)
+
+
 @login_required
 def order_detail(request, order_id):
     """Order detail page"""
-    order = get_object_or_404(Order, id=order_id, user=request.user)
+    order = get_object_or_404(Order, id=order_id)
+    
+    # Check permissions
+    can_assign_delivery = request.user.is_staff # Only staff can assign
+    is_assigned_delivery_man = False
+    if request.user.is_authenticated and hasattr(request.user, 'delivery_profile'):
+        is_assigned_delivery_man = (order.assigned_to == request.user.delivery_profile)
+    
+    assign_form = None
+    status_form = None
+
+    # Handle POST requests
+    if request.method == 'POST':
+        if can_assign_delivery and 'assign_delivery_man' in request.POST:
+            assign_form = AssignDeliveryForm(request.POST)
+            if assign_form.is_valid():
+                delivery_man = assign_form.cleaned_data['delivery_man']
+                order.assigned_to = delivery_man
+                order.status = 'shipped' # Automatically set to 'shipped' when assigned
+                order.save()
+                messages.success(request, f"Order #{order.order_number} assigned to {delivery_man.user.username} and status set to Shipped.")
+                return redirect('store:order_detail', order_id=order.id)
+            
+        elif is_assigned_delivery_man and 'update_status' in request.POST:
+            new_status = request.POST.get('new_status')
+            valid_statuses = [choice[0] for choice in Order.STATUS_CHOICES]
+            if new_status and new_status in valid_statuses:
+                order.status = new_status
+                order.save()
+                messages.success(request, f"Order #{order.order_number} status updated to {new_status}.")
+                return redirect('store:order_detail', order_id=order.id)
+            else:
+                messages.error(request, "Invalid status provided.")
+        
+        elif can_assign_delivery and 'update_payment_status' in request.POST:
+            order.payment_status = 'paid'
+            order.save()
+            messages.success(request, f"Order #{order.order_number} payment status updated to paid.")
+            return redirect('store:order_detail', order_id=order.id)
+        
+    # Initialize forms for GET requests or invalid POSTs
+    if can_assign_delivery:
+        assign_form = AssignDeliveryForm()
+
+    if is_assigned_delivery_man:
+        # Create a simple form for status update, pre-filling current status
+        class OrderStatusUpdateForm(forms.Form):
+            new_status = forms.ChoiceField(choices=Order.STATUS_CHOICES, initial=order.status, label="Update Status")
+        status_form = OrderStatusUpdateForm()
+    
     context = {
         'order': order,
+        'can_assign_delivery': can_assign_delivery,
+        'is_assigned_delivery_man': is_assigned_delivery_man,
+        'assign_form': assign_form,
+        'status_form': status_form,
+        'STATUS_CHOICES': Order.STATUS_CHOICES,
     }
     return render(request, 'store/order_detail.html', context)
 

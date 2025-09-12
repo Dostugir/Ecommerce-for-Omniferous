@@ -38,4 +38,8 @@ urlpatterns = [
     path('search/', views.search_products, name='search_products'),
     # Reviews
     path('reviews/', views.review_list, name='review_list'),
+
+    # Delivery Man features
+    path('delivery/dashboard/', views.delivery_man_dashboard, name='delivery_man_dashboard'),
+    path('delivery/update_status/<int:order_id>/', views.update_delivery_status, name='update_delivery_status'),
 ]

@@ -1,7 +1,74 @@
 from django.contrib import admin
-from .models import Category, Product, ProductImage, Review, Cart, CartItem, Order, OrderItem, Wishlist, Ad, FlashSaleCampaign, FlashSaleItem
+from .models import Category, Product, ProductImage, Review, Cart, CartItem, Order, OrderItem, Wishlist, Ad, FlashSaleCampaign, FlashSaleItem, DeliveryMan
 from django.utils.html import mark_safe
 from django.db import transaction
+from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import User, Group
+from django import forms
+
+class DeliveryUserChangeForm(forms.ModelForm):
+    is_delivery_person = forms.BooleanField(label='Is Delivery Person', required=False)
+
+    class Meta:
+        model = User
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            self.fields['is_delivery_person'].initial = self.instance.groups.filter(name='DeliveryGroup').exists()
+
+class DeliveryUserCreationForm(forms.ModelForm):
+    is_delivery_person = forms.BooleanField(label='Is Delivery Person', required=False)
+
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'password', 'is_delivery_person')
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.set_password(self.cleaned_data["password"])
+        if commit:
+            user.save()
+            if self.cleaned_data.get('is_delivery_person'):
+                delivery_group, created = Group.objects.get_or_create(name='DeliveryGroup')
+                user.groups.add(delivery_group)
+        return user
+
+class DeliveryManUserAdmin(UserAdmin):
+    form = DeliveryUserChangeForm
+    add_form = DeliveryUserCreationForm
+
+    fieldsets = UserAdmin.fieldsets + (
+        (None, {'fields': ('is_delivery_person',)}),
+    )
+    add_fieldsets = UserAdmin.add_fieldsets + (
+        (None, {'fields': ('is_delivery_person',)}),
+    )
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+
+        if form.cleaned_data.get('is_delivery_person'):
+            delivery_group, created = Group.objects.get_or_create(name='DeliveryGroup')
+            obj.groups.add(delivery_group)
+        else:
+            try:
+                delivery_group = Group.objects.get(name='DeliveryGroup')
+                obj.groups.remove(delivery_group)
+            except Group.DoesNotExist:
+                pass
+
+admin.site.unregister(User)
+admin.site.register(User, DeliveryManUserAdmin)
+
+@admin.register(DeliveryMan)
+class DeliveryManAdmin(admin.ModelAdmin):
+    list_display = ['user', 'phone_number', 'is_available', 'created_at']
+    list_filter = ['is_available', 'created_at']
+    search_fields = ['user__username', 'phone_number']
+    list_editable = ['is_available']
+    raw_id_fields = ['user'] # Allows searching for user by ID, useful for many users
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
@@ -80,7 +147,7 @@ class OrderItemInline(admin.TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ['order_number', 'user', 'status', 'total_amount', 'payment_status', 'created_at']
+    list_display = ['order_number', 'user', 'assigned_to', 'status', 'total_amount', 'payment_status', 'created_at']
     list_filter = ['status', 'payment_status', 'created_at']
     list_editable = ['status', 'payment_status']
     search_fields = ['order_number', 'user__username', 'email']
@@ -88,7 +155,7 @@ class OrderAdmin(admin.ModelAdmin):
     inlines = [OrderItemInline]
     fieldsets = (
         ('Order Information', {
-            'fields': ('order_number', 'user', 'status', 'total_amount')
+            'fields': ('order_number', 'user', 'assigned_to', 'status', 'total_amount')
         }),
         ('Shipping Information', {
             'fields': ('first_name', 'last_name', 'email', 'phone', 'address', 'city', 'state', 'postal_code', 'country')

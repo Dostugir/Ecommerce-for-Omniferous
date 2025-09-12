@@ -6,8 +6,7 @@ User = get_user_model()
 
 class CustomLoginForm(LoginForm):
     def clean(self):
-        # Call the parent class's clean method first to let allauth handle basic validation
-        super_cleaned_data = super().clean()
+        # Let allauth handle basic validation
         
         login_value = self.cleaned_data.get('login')
         
@@ -20,13 +19,6 @@ class CustomLoginForm(LoginForm):
                 raise forms.ValidationError(
                     "No account found with this email address. Please check your email or sign up."
                 )
-            else:
-                # If user exists, check if they are active
-                user = User.objects.get(email__iexact=login_value)
-                if not user.is_active:
-                    raise forms.ValidationError(
-                        "Your account is not active. Please check your email for a verification link or contact support."
-                    )
         
         # Call the parent class's clean method to continue allauth's validation
         # This is called here after our custom validation to ensure allauth's

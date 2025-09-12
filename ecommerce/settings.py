@@ -167,8 +167,11 @@ SITE_ID = 1
 # Allauth settings
 ACCOUNT_SIGNUP_FIELDS = ['email', 'password1', 'password2']
 ACCOUNT_LOGIN_METHOD = 'email'
-ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+ACCOUNT_EMAIL_VERIFICATION = 'none'
 ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_RATE_LIMITS = {
     # 'login_failed': '5/300s', # Commented out to disable rate limiting for login failed attempts
 }
@@ -177,6 +180,8 @@ ACCOUNT_RATE_LIMITS = {
 ACCOUNT_FORMS = {
     'login': 'ecommerce.forms.CustomLoginForm',
 }
+
+ACCOUNT_ADAPTER = 'ecommerce.adapters.CustomAccountAdapter' # New: Custom Allauth adapter
 
 # Email settings (for development)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

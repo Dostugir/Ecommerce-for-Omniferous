@@ -166,16 +166,40 @@ class CartItem(models.Model):
         return self.product.get_price() * self.quantity
 
 
+class DeliveryManManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(user__groups__name='DeliveryGroup') # Assuming a 'DeliveryGroup' exists
+
+class DeliveryMan(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='delivery_profile')
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    is_available = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    objects = models.Manager() # Default manager
+    delivery_men = DeliveryManManager() # Custom manager
+
+    class Meta:
+        verbose_name_plural = 'Delivery Men'
+
+    def __str__(self):
+        return self.user.username
+
+
 class Order(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('processing', 'Processing'),
         ('shipped', 'Shipped'),
+        ('out_for_delivery', 'Out for Delivery'), # New status
+        ('delivery_attempted', 'Delivery Attempted'), # New status
         ('delivered', 'Delivered'),
         ('cancelled', 'Cancelled'),
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    assigned_to = models.ForeignKey(DeliveryMan, on_delete=models.SET_NULL, null=True, blank=True, related_name='deliveries') # New field
     order_number = models.CharField(max_length=20, unique=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -219,8 +243,8 @@ class Order(models.Model):
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField()
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    quantity = models.PositiveIntegerField(default=0)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

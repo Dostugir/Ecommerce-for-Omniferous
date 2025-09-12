@@ -110,8 +110,8 @@
     </div>
     {% endif %}
 
-    <!-- AJAX Messages Container -->
-    <div id="ajax-message-container" class="container mt-3" style="position: fixed; top: 70px; left: 50%; transform: translateX(-50%); z-index: 1050; width: 50%; max-width: 500px;">
+    <!-- AJAX Messages Container (only for AJAX requests) -->
+    <div id="ajax-message-container" class="container mt-3" style="position: fixed; top: 70px; left: 50%; transform: translateX(-50%); z-index: 1050; width: 50%; max-width: 500px; display: none;">
         <!-- AJAX messages will be inserted here -->
     </div>
 
@@ -134,7 +134,16 @@
                         <li><a href="{% url 'store:home' %}" class="text-light">Home</a></li>
                         <li><a href="{% url 'store:product_list' %}" class="text-light">Products</a></li>
                         <li><a href="{% url 'store:cart_detail' %}" class="text-light">Cart</a></li>
-                        <li><a href="{% url 'account_login' %}" class="text-light">Login</a></li>
+                        {% if user.is_authenticated %}
+                            <li><a href="{% url 'store:order_list' %}" class="text-light">My Orders</a></li>
+                            {% if user.groups.all.0.name == 'DeliveryGroup' %}
+                                <li><a href="{% url 'store:delivery_man_dashboard' %}" class="text-light">
+                                    <i class="fas fa-truck me-1"></i>Delivery Dashboard
+                                </a></li>
+                            {% endif %}
+                        {% else %}
+                            <li><a href="{% url 'account_login' %}" class="text-light">Login</a></li>
+                        {% endif %}
                     </ul>
                 </div>
                 <div class="col-md-4">
@@ -245,7 +254,12 @@
             });
 
             function displayAjaxMessage(message, type) {
+                // Hide Django messages container
+                $('#django-messages-container').hide();
+                
                 var container = $('#ajax-message-container');
+                container.show();
+                
                 var alertHtml = `
                     <div class="alert alert-${type} alert-dismissible fade show" role="alert">
                         ${message}
