@@ -164,6 +164,11 @@ class CartItem(models.Model):
 
     def get_total_price(self):
         return self.product.get_price() * self.quantity
+    
+    def get_savings(self):
+        if self.product.is_on_sale:
+            return (self.product.price - self.product.sale_price) * self.quantity
+        return 0
 
 
 class DeliveryManManager(models.Manager):

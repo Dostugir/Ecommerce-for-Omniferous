@@ -18,7 +18,7 @@ from .models import (
     Product, Category, Cart, CartItem, Order, OrderItem, 
     Review, Wishlist, Ad, FlashSaleCampaign, FlashSaleItem, DeliveryMan # Add new models
 )
-from .forms import ReviewForm, CheckoutForm, ProductSearchForm, UserRegistrationForm, AssignDeliveryForm # Add AssignDeliveryForm
+from .forms import ReviewForm, CheckoutForm, ProductSearchForm, UserRegistrationForm, AssignDeliveryForm, UserProfileForm, CustomPasswordChangeForm # Add new forms
 
 # Initialize Stripe
 try:
@@ -130,13 +130,34 @@ def product_list(request):
             products = products.filter(category__slug=category)
         
         if min_price:
-            products = products.filter(price__gte=min_price)
+            # Filter by sale price if available, otherwise by regular price
+            products = products.filter(
+                Q(sale_price__isnull=False, sale_price__gte=min_price) |
+                Q(sale_price__isnull=True, price__gte=min_price)
+            )
         
         if max_price:
-            products = products.filter(price__lte=max_price)
+            # Filter by sale price if available, otherwise by regular price
+            products = products.filter(
+                Q(sale_price__isnull=False, sale_price__lte=max_price) |
+                Q(sale_price__isnull=True, price__lte=max_price)
+            )
         
         if sort_by:
-            products = products.order_by(sort_by)
+            if sort_by in ['price', '-price']:
+                # For price sorting, we need to use a custom ordering that considers sale price
+                if sort_by == 'price':
+                    # Order by sale price if available, otherwise by regular price (ascending)
+                    products = products.extra(
+                        select={'effective_price': 'COALESCE(sale_price, price)'}
+                    ).order_by('effective_price')
+                else:  # -price
+                    # Order by sale price if available, otherwise by regular price (descending)
+                    products = products.extra(
+                        select={'effective_price': 'COALESCE(sale_price, price)'}
+                    ).order_by('-effective_price')
+            else:
+                products = products.order_by(sort_by)
     
     # Pagination
     paginator = Paginator(products, 12)
@@ -367,18 +388,28 @@ def buy_now_direct(request, product_id):
 @require_POST
 def update_cart_item(request, item_id):
     """Update cart item quantity"""
-    cart_item = get_object_or_404(CartItem, id=item_id)
-    quantity = int(request.POST.get('quantity', 1))
+    if not request.user.is_authenticated:
+        messages.error(request, 'Please log in to update your cart.')
+        return redirect('store:cart_detail')
     
-    if quantity <= 0:
-        cart_item.delete()
-        messages.success(request, 'Item removed from cart!')
-    elif quantity > cart_item.product.stock:
-        messages.error(request, 'Not enough stock available!')
-    else:
-        cart_item.quantity = quantity
-        cart_item.save()
-        messages.success(request, 'Cart updated!')
+    try:
+        cart_item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
+        quantity = int(request.POST.get('quantity', 1))
+        
+        if quantity <= 0:
+            cart_item.delete()
+            messages.success(request, 'Item removed from cart!')
+        elif quantity > cart_item.product.stock:
+            messages.error(request, f'Not enough stock available! Maximum: {cart_item.product.stock}')
+        else:
+            cart_item.quantity = quantity
+            cart_item.save()
+            messages.success(request, 'Cart updated!')
+            
+    except ValueError:
+        messages.error(request, 'Invalid quantity provided.')
+    except Exception as e:
+        messages.error(request, 'Error updating cart. Please try again.')
     
     return redirect('store:cart_detail')
 
@@ -749,3 +780,33 @@ def review_list(request):
         'reviews': page_obj
     }
     return render(request, 'store/review_list.html', context)
+
+
+@login_required
+def user_profile(request):
+    """User profile page with editable information"""
+    user = request.user
+    
+    if request.method == 'POST':
+        if 'update_profile' in request.POST:
+            profile_form = UserProfileForm(request.POST, instance=user)
+            if profile_form.is_valid():
+                profile_form.save()
+                messages.success(request, 'Your profile has been updated successfully!')
+                return redirect('store:user_profile')
+        elif 'change_password' in request.POST:
+            password_form = CustomPasswordChangeForm(user, request.POST)
+            if password_form.is_valid():
+                password_form.save()
+                messages.success(request, 'Your password has been changed successfully!')
+                return redirect('store:user_profile')
+    else:
+        profile_form = UserProfileForm(instance=user)
+        password_form = CustomPasswordChangeForm(user)
+    
+    context = {
+        'user': user,
+        'profile_form': profile_form,
+        'password_form': password_form,
+    }
+    return render(request, 'store/user_profile.html', context)

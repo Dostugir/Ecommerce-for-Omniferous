@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
 from django.contrib.auth.models import User, Group
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Submit, Row, Column, Field
@@ -174,4 +174,59 @@ class AssignDeliveryForm(forms.Form):
         self.helper.layout = Layout(
             Field('delivery_man'),
             Submit('submit', 'Assign Delivery Man', css_class='btn btn-success mt-3')
+        )
+
+
+class UserProfileForm(forms.ModelForm):
+    """Form for editing user profile information"""
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email']
+        widgets = {
+            'first_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter your first name'
+            }),
+            'last_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter your last name'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter your email address'
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            Row(
+                Column('first_name', css_class='form-group col-md-6 mb-0'),
+                Column('last_name', css_class='form-group col-md-6 mb-0'),
+                css_class='form-row'
+            ),
+            'email',
+            Submit('submit', 'Update Profile', css_class='btn btn-primary mt-3')
+        )
+
+
+class CustomPasswordChangeForm(PasswordChangeForm):
+    """Custom password change form with better styling"""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Add custom styling to all fields
+        for field_name, field in self.fields.items():
+            field.widget.attrs.update({
+                'class': 'form-control',
+                'placeholder': f'Enter your {field_name.replace("_", " ")}'
+            })
+        
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            'old_password',
+            'new_password1',
+            'new_password2',
+            Submit('submit', 'Change Password', css_class='btn btn-warning mt-3')
         )
